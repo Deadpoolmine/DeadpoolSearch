@@ -112,8 +112,8 @@ namespace DeadpoolSearch
             CrawlerHelper.OnProgressChanged += CrawlerOnProgressChanged;
             //留一手
             //await CrawlerHelper.CrawlComics(CrwalerOptions.Fandom);
-            await CrawlerHelper.CrawlComics(CrwalerOptions.MarvelHQ);
-
+            //await CrawlerHelper.CrawlComics(CrwalerOptions.MarvelHQ);
+            await CrawlerHelper.CrawlComics(CrwalerOptions.Comixology);
             List<MarvelComic> comics = await CrawlerHelper.GetComics();
             SearchCoreHelper.CreateDirectory(comics);
             IsActive = false;
@@ -144,6 +144,11 @@ namespace DeadpoolSearch
                 case CrwalerOptions.MarvelHQ:
                     {
                         percentage = (progress * 100 / 183).ToString();
+                    }
+                    break;
+                case CrwalerOptions.Comixology:
+                    {
+                        percentage = (progress * 100 / 53).ToString();
                     }
                     break;
                 default:

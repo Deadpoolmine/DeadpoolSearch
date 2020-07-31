@@ -272,25 +272,141 @@ namespace DeadpoolSearch.Helpers
                 System.Diagnostics.Debug.WriteLine(ex);
             }
         }
+        public static List<string> HeroPool = new List<string>();
 
-        public static async Task GetFromComixology()
-        {
-            
-            foreach (var url in ConstantsHelper.comixologyUrl)
-            {
-                await GetFromComixologyPart(url,1);
-            }
-        }
-        public static async Task GetFromComixologyPart(string url, int totalRecord)
+        public static async Task GetHeroPool()
         {
             HttpClient httpClient = new HttpClient();
+            var html = await httpClient.GetStringAsync(ConstantsHelper.marvelHerosPoolUrl);
+            HtmlDocument htmlDocument = new HtmlDocument();
+            htmlDocument.LoadHtml(html);
+            var heroes = htmlDocument.DocumentNode.Descendants("li")
+                .ToList();
+            foreach (var hero in heroes)
+            {
+                var heroName = hero.Descendants("a").FirstOrDefault().InnerText;
+                HeroPool.Add(heroName);
+            }
+        }
+        private static int totalPage = 1;
+        public static async Task GetFromComixology()
+        {
+            await GetHeroPool();
+            //44+9
+            foreach (var url in ConstantsHelper.comixologyUrl)
+            {
+                await GetFromComixologyPart(url);
+            }
+        }
+        
 
+        public static async Task GetFromComixologyPart(KeyValuePair<string,int> url)
+        {
             StorageFolder storageFolder = ApplicationData.Current.LocalFolder;
             StorageFile sampleFile = await ApplicationData.Current.LocalFolder.CreateFileAsync("MarvelComics", CreationCollisionOption.OpenIfExists);
 
             List<string> Buffer = new List<string>();
-        }
+            int currentPage = 1;
+            string currentUrl = url.Key + currentPage;
+            while (currentPage <= url.Value)
+            {
+                try
+                {
+                    HttpClient httpClient = new HttpClient();
+                    var html = await httpClient.GetStringAsync(currentUrl);
+                    HtmlDocument htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(html);
 
+                    var items = htmlDocument.DocumentNode.Descendants("li")
+                        .Where(node => node.GetAttributeValue("class", "").Equals("content-item"))
+                        .ToList();
+                    foreach (var item in items)
+                    {
+                        var img = item.Descendants("img").FirstOrDefault()
+                            .GetAttributeValue("src", "");
+                        var title = item.Descendants("h5").FirstOrDefault()
+                            .InnerText;
+                        var detail = item.Descendants("a").FirstOrDefault()
+                            .GetAttributeValue("href", "");
+
+                        var heroList = "";
+                        var dateTime = "";
+                        var descriptions = "";
+                        
+
+                        var detailUrl = item.Descendants("a")
+                            .Where(node => node.GetAttributeValue("class", "").Equals("content-details"))
+                            .FirstOrDefault().GetAttributeValue("href","");
+                        try
+                        {
+                            var detailHtml = await httpClient.GetStringAsync(detailUrl);
+                            HtmlDocument detailHtmlDocument = new HtmlDocument();
+                            detailHtmlDocument.LoadHtml(detailHtml);
+
+                            descriptions = detailHtmlDocument.DocumentNode.Descendants("section")
+                                .Where(node => node.GetAttributeValue("class", "").Equals("item-description"))
+                                .FirstOrDefault().InnerText;
+
+                            dateTime = detailHtmlDocument.DocumentNode.Descendants("div")
+                                .Where(node => node.GetAttributeValue("class", "").Equals("aboutText"))
+                                .ToList()[1].InnerText;
+                            foreach (var hero in HeroPool)
+                            {
+                                if (descriptions.Contains(hero))
+                                {
+                                    heroList += hero + ".";
+                                }
+                            }
+                            System.Diagnostics.Debug.WriteLine("-----------------");
+                            System.Diagnostics.Debug.WriteLine(img);
+                            System.Diagnostics.Debug.WriteLine(title);
+                            System.Diagnostics.Debug.WriteLine(descriptions);
+                            System.Diagnostics.Debug.WriteLine(heroList);
+                            System.Diagnostics.Debug.WriteLine(dateTime);
+                            System.Diagnostics.Debug.WriteLine("-----------------");
+
+                            MarvelComic marvelComic = new MarvelComic
+                            {
+                                DateTime = dateTime.ToString(),
+                                Title = title,
+                                RelatedHero = heroList,
+                                Description = descriptions,
+                                HeroBg = img,
+                                Detail = detail
+                            };
+
+                            if ((currentPage + 1) % 5 != 0)
+                            {
+                                Buffer.Add(JsonConvert.SerializeObject(marvelComic));
+                            }
+                            else
+                            {
+                                await FileIO.AppendLinesAsync(sampleFile, Buffer);
+                                Buffer.Clear();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(ex);
+                        }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
+                currentPage++;
+                totalPage++;
+                OnProgressChanged?.Invoke(totalPage, CrwalerOptions.Comixology);
+                currentUrl = url.Key + currentPage;
+            }
+            if(Buffer.Count != 0)
+            {
+                await FileIO.AppendLinesAsync(sampleFile, Buffer);
+                Buffer.Clear();
+            }
+        }
         public static async Task CrawlComics(CrwalerOptions options)
         {
             switch (options)

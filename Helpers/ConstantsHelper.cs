@@ -19,12 +19,14 @@ namespace DeadpoolSearch.Helpers
 
         public static string marvelHqUrl = "https://www.marvelhq.com/comics";
 
-        public static string[] comixologyUrl = new string[]
+        public static KeyValuePair<string, int>[] comixologyUrl = new KeyValuePair<string, int>[]
         {
-            "https://www.comixology.com/search/items?search=Marvel&subType=SINGLE_ISSUES",
-            "https://www.comixology.com/search/items?search=Marvel&subType=COLLECTIONS",
-            "https://www.comixology.com/search/series?search=Marvel"
+            new KeyValuePair<string, int>("https://www.comixology.com/search/items?search=Marvel&subType=SINGLE_ISSUES&itemsSearchDetailList_pg=",44),
+            new KeyValuePair<string, int>("https://www.comixology.com/search/items?search=Marvel&subType=COLLECTIONS&itemsSearchDetailList_pg=",9),
         };
-        //private static string marvelHqUrl = "https://www.marvelhq.com/comics";
+
+        public static string marvelHerosPoolUrl = "https://www.marvel.com/comics/characters";
+
+
     }
 }

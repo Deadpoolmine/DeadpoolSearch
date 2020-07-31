@@ -19,7 +19,11 @@ namespace DeadpoolSearch.Extensions
             WebView webView = d as WebView;
             if (webView != null)
             {
-                webView.NavigateToString((string)e.NewValue);
+                System.Diagnostics.Debug.WriteLine((string)e.NewValue);
+                if (Uri.IsWellFormedUriString((string)e.NewValue, UriKind.Absolute))
+                    webView.Navigate(new Uri((string)e.NewValue));
+                else
+                    webView.NavigateToString((string)e.NewValue);
             }
         }
     }

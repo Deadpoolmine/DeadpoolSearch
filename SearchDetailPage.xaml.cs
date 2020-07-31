@@ -140,12 +140,26 @@ namespace DeadpoolSearch
             {
                 CopyCollection(SearchCoreHelper.Search(SearchBar.Text));
                 RecordNumber = MarvelComics.Count;
+                DetailPanel.Offset(0, 1000).Start();
+                if (cachedHeight != -1)
+                {
+                    DetailRow.Height = new GridLength(cachedHeight);
+                }
+                DetailPanel.CornerRadius = new CornerRadius(30, 30, 0, 0);
+                isExpanded = false;
             }
         }
         private void GoSearch(object sender, RoutedEventArgs e)
         {
             CopyCollection(SearchCoreHelper.Search(Query));
             RecordNumber = MarvelComics.Count;
+            DetailPanel.Offset(0, 1000).Start();
+            if (cachedHeight != -1)
+            {
+                DetailRow.Height = new GridLength(cachedHeight);
+            }
+            DetailPanel.CornerRadius = new CornerRadius(30, 30, 0, 0);
+            isExpanded = false;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -205,7 +219,10 @@ namespace DeadpoolSearch
 
         private void NavigationBack(object sender, RoutedEventArgs e)
         {
-            DetailView.NavigateToString(CurrentComic.Detail);
+            if (Uri.IsWellFormedUriString(CurrentComic.Detail, UriKind.Absolute))
+                DetailView.Navigate(new Uri(CurrentComic.Detail));
+            else
+                DetailView.NavigateToString(CurrentComic.Detail);
         }
 
         private void ExpandPanel(object sender, RoutedEventArgs e)
